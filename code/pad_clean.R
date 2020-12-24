@@ -14,6 +14,8 @@ library(stringr)
 #logInfoId: Numeric representation of logInfo
 #inSurvey: dummy variable which is True when the caller was sampled in the recent survey.
 
+#WHAT ARE THE LOGINFO ID numbers?
+
 log_data <- read_csv("~/Desktop/PAE/data/logData.csv")
 
 log_data$language <- log_data$logInfo
