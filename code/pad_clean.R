@@ -28,19 +28,20 @@ ggplot(data=lang_spoken, aes(x=langId)) +
     y= 'count'
   )
 
+
 #distribution of calls made
 
 calls_made <- log_data %>%
   group_by(callerId, noCallsMade) %>%
   count()
 
-summary(calls_made$noCallsMade)
+sd(calls_made$noCallsMade)
 
 ggplot(calls_made, aes(x=noCallsMade)) +
   geom_histogram(color="black", fill="blue") +
   xlim(0,350) +
   labs(
-    title = 'Distribution of total Content listened to all Across all Calls (Outliers Excluded) \n
+    title = 'Distribution of calls made eper individual (Outliers Excluded) \n
 Min. 1st Qu.  Median  Mean   3rd Qu.    Max. 
     3.0    45.0    69.0     99.9    106.0    7110.0 ',
     x = 'Total number of calls'
@@ -75,11 +76,13 @@ ggplot(content_call_ratio_df, aes(x=ratio)) +
   geom_histogram(color="black", fill="red") +
   xlim(0, 5) +
   labs(
-    title = 'Distribution of ration of content listened to Calls (Outliers Excluded) \n
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) \n
     Min.         1st Qu.   Median     Mean    3rd Qu.      Max.
  0.05963    0.84598  1.18586  1.40733  1.69773   22.33333  ',
     x = 'Content to Call Ratio'
   )
+
+sd(content_call_ratio_df$ratio)
 
 #Filtering by top menu selection
 
@@ -154,6 +157,8 @@ top_menu_choice$Amharic_perc <- round(top_menu_choice$Amharic_1/top_menu_choice$
 ggplot(top_menu_choice, aes(frequencies, y=labels)) +
   geom_bar()
 
+
+data=top_menu_choice
 gg_total <- ggplot(data=top_menu_choice, aes(x=labels, y=frequencies)) +
   theme(axis.text.x = element_text(angle = 90))+
   geom_bar(stat="identity", fill='black')+
@@ -229,7 +234,7 @@ b<-2
 #WHAT ARE THE LOGINFO ID numbers?
 
 #loading data
-#log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
+log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
 
 #MAKE IT ALL UPPER!!!
 
