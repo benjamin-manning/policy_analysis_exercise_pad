@@ -191,7 +191,7 @@ top_menu <- top_menu %>%
 
 
 ggplot(top_menu, aes(logInfo)) +
-  theme(axis.text.x = element_text(angle = 45, hjust =1))+
+  theme(axis.text.x = element_text(angle = 30, hjust =1))+
   geom_bar()+
   labs(
     title = 'Distirution of TOP MENU items selected at least once by a unique caller',
@@ -199,7 +199,6 @@ ggplot(top_menu, aes(logInfo)) +
   )
 
 ggplot(top_menu, aes(langId, fill = logInfo)) +
-  theme(axis.text.x = element_text(angle = 45, hjust =1))+
   geom_bar()+
   labs(
     title = 'Distirution of Languages divided by TOP MENU option
@@ -232,9 +231,6 @@ ggplot(top_menu, aes(langId, fill = logInfo)) +
  - REPEAT RAIN MENU
  - RETURN TO TOP MENU
  - INVALID KEY PRESSED (ADDITIONAL OUTCOME)
-
-
-
 
 
 
@@ -323,7 +319,7 @@ MENU_1$logInfo<- str_replace(MENU_1$logInfo, " SELECTED", "")
 # plotting
 ggplot(data=MENU_1, aes(x=logInfo)) +
   theme(axis.text.x = element_text(angle = 25, hjust= 1))+
-  geom_bar(fill='orange')+
+  geom_bar(fill='cyan')+
   labs(
     title = 'Individuals By Content Selected at least Once from 
     RAIN MENU/PRE PLANTING OPTION',
@@ -396,8 +392,6 @@ land_prep_no_lang$logInfo<- str_replace(land_prep_no_lang$logInfo, "- TIGRIGNA",
 land_prep_no_lang$logInfo<- str_replace(land_prep_no_lang$logInfo, "- WOLAYITTA", "")
 land_prep_no_lang$logInfo<- str_replace(land_prep_no_lang$logInfo, "- WOLAYTIGNA", "")
 land_prep_no_lang$logInfo<- str_replace(land_prep_no_lang$logInfo, "- SIDAMIGNA", "")
-
-table(land_prep_no_lang$logInfo)
 
 ggplot(land_prep_no_lang, aes(x=logInfo)) +
   theme(axis.text.x = element_text(angle = 90))+
@@ -475,19 +469,6 @@ seed_variety_no_lang$logInfo<- str_replace(seed_variety_no_lang$logInfo, "- WOLA
 seed_variety_no_lang$logInfo<- str_replace(seed_variety_no_lang$logInfo, "- WOLAYTIGNA", "")
 seed_variety_no_lang$logInfo<- str_replace(seed_variety_no_lang$logInfo, "- SIDAMIGNA", "")
 
-table(seed_variety_no_lang$logInfo)
-
-ggplot(seed_variety_no_lang, aes(x=logInfo)) +
-  theme(axis.text.x = element_text(angle = 90))+
-  geom_bar()+
-  labs(
-    title = 'RAIN MENU/PRE PLANTING/seed variety
-    content actually played',
-    x = 'Content Selected',
-    y= 'count'
-  )
-
-
 #alternative with langauge view
 ggplot(seed_variety_no_lang, aes(langId, fill = logInfo)) +
   geom_bar()+
@@ -498,11 +479,158 @@ ggplot(seed_variety_no_lang, aes(langId, fill = logInfo)) +
     ',
     x = 'Language'
   )
+
+#no language - overall
+ggplot(seed_variety_no_lang, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 30, hjust=1))+
+  geom_bar()+
+  labs(
+    title = 'RAIN MENU/PRE PLANTING/seed variety
+    content actually played',
+    x = 'Content Selected',
+    y= 'count'
+  )
+
 ```
+ 
+**We have mostly exhausted the pre-planting option menu, and if we go back up to the original rain menu (aka MAIN MENU), we can see that planting also has a large porportion of users - over half**
+
+
+### RAIN MENU/PLANTING MENU
+
+
+##### INCOMING CALL STARTED --> WELCOME MESSAGE PLAYED --> RANDOM EXPERIMENT --> 
+##### TOP MENU --> RAIN MENU --> PLANTING MENU
+
+**The planting option as a subsection of the rain option is known as MENU 2 in the data**
+
+PLANTING MENU
+
+ - SEED RATE
+ - SOIL DEPTH PLANTING
+ - TRANSPLANTING
+ - MOISTURE CONSERVATION
+ - FERTILIZER APPLICATION
+ - REPLAY MENY
+ - RETURN TO RAIN MENY
+ - INVALID KEY (ADDITIONAL OUTCOME)
  
 
 
+```{r}
+#PLANTING OPTION - second most accessed MENU 2
+MENU_2 <- filter(log_data, grepl("MENU 2",logInfo))
+MENU_2 <- filter(MENU_2, !grepl("HHIMENU 2",logInfo))
+MENU_2 <- filter(MENU_2, !grepl("APICULTURE MENU",logInfo))
+MENU_2 <- filter(MENU_2, !grepl("APICULTURE SUB2 MENU",logInfo))
+MENU_2 <- filter(MENU_2, !grepl("DAIRY MENU",logInfo))
+MENU_2 <- filter(MENU_2, !grepl("FATTENING MANU",logInfo))
 
+MENU_2 <- MENU_2 %>%
+  group_by(callerId, logInfo, langId) %>%
+  count()
+
+#cleaning
+MENU_2$logInfo<- str_replace(MENU_2$logInfo, "MENU 2 - ", "")
+MENU_2$logInfo<- str_replace(MENU_2$logInfo, " SELECTED", "")
+MENU_2$logInfo<- str_replace(MENU_2$logInfo, " PRESSED", "")
+MENU_2$logInfo<- str_replace(MENU_2$logInfo, " OPTION", "")
+
+
+#plotting
+ggplot(data=MENU_2, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  geom_bar(fill='olivedrab')+
+  labs(
+    title = 'Individuals By Content Selected at least Once from 
+    RAIN MENU/PLANTING OPTION',
+    x = 'Content Selected',
+    y= 'count'
+  )
+```
+
+
+
+**As per usual, we will go into the most common selection: seed rate!**
+
+### RAIN MENU/PLANTING MENU/SEED RATE
+
+
+##### INCOMING CALL STARTED --> WELCOME MESSAGE PLAYED --> RANDOM EXPERIMENT --> 
+##### TOP MENU --> RAIN MENU --> PLANTING MENU --> SEED RATE
+
+
+**SEED RATE**
+
+ - BARLEY
+ - MAIZE
+ - SORGHUM
+ - TEF
+ - WHEAT
+ - SESAME
+ - FAVA BEAN
+ - CHICKPEA
+ - COMMON BEAN
+ - COTTON
+
+ORDER UNKOWN:
+
+ - RICE
+ - DURAME WHEAT
+ - LENTIL
+ - MALT BARLEY
+
+```{r}
+seed_rate <- filter(log_data, grepl("CONTENT PLAYED - SEED RATE",logInfo))
+
+seed_rate_final <- seed_rate %>%
+  group_by(callerId, logInfo, langId) %>%
+  count()
+
+seed_rate_final$logInfo<- str_replace(seed_rate_final$logInfo, "CONTENT PLAYED - SEED RATE -", "")
+
+ggplot(data=seed_rate_final, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 90))+
+  geom_bar()+
+  labs(
+    title = 'RAIN MENU/PLANTING/SEED RATE
+    content actually played by language',
+    x = 'Content Selected',
+    y= 'count'
+  )
+
+#get rid of the language breakdown
+seed_rate_no_lang <- seed_rate_final
+
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- AMHARIC", "")
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- OROMIFFA", "")
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- TIGRIGNA", "")
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- WOLAYITTA", "")
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- WOLAYTIGNA", "")
+seed_rate_no_lang$logInfo<- str_replace(seed_rate_no_lang$logInfo, "- SIDAMIGNA", "")
+
+#alternative with langauge view
+ggplot(seed_rate_no_lang, aes(langId, fill = logInfo)) +
+  geom_bar()+
+  labs(
+    title = 'ALTERNATIVE RAIN MENU/PLANTING/SEED RATE
+    content actually played by language
+    1 = Amharic, 2=Oromiffa, 3=Tigrigna, 4=Wolayitta, and 5=Sidamigna
+    ',
+    x = 'Language'
+  )
+#no ;anguage
+ggplot(seed_rate_no_lang, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 90))+
+  geom_bar()+
+  labs(
+    title = 'RAIN MENU/PLANTING/SEED RATE
+    content actually played',
+    x = 'Content Selected',
+    y= 'count'
+  )
+
+```
 
 
 
