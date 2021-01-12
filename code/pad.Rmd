@@ -619,7 +619,7 @@ ggplot(seed_rate_no_lang, aes(langId, fill = logInfo)) +
     ',
     x = 'Language'
   )
-#no ;anguage
+#no language
 ggplot(seed_rate_no_lang, aes(x=logInfo)) +
   theme(axis.text.x = element_text(angle = 90))+
   geom_bar()+
@@ -635,6 +635,52 @@ ggplot(seed_rate_no_lang, aes(x=logInfo)) +
 
 
 
+```{r}
+crop_menu <- log_data %>%
+  filter(grepl("CROP MENU - ",logInfo)) %>%
+  filter(!grepl("HHI",logInfo)) %>%
+  filter(!grepl("REPLAYED",logInfo))
+
+crop_menu <- crop_menu %>%
+  group_by(callerId, logInfo, langId) %>%
+  count()
+
+crop_menu$logInfo<- str_replace(crop_menu$logInfo, "CROP MENU - ", "")
+crop_menu$logInfo<- str_replace(crop_menu$logInfo, " SELECTED", "")
+crop_menu$logInfo<- str_replace(crop_menu$logInfo, "GO TO", "")
 
 
+ggplot(crop_menu, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown',
+    x = 'Crops',
+    y= 'count'
+  )
 
+ggplot(crop_menu, aes(langId, fill = logInfo)) +
+  geom_bar()+
+  labs(
+    title = 'CROP MENU BY LANGUAGE
+    1 = Amharic, 2=Oromiffa, 3=Tigrigna, 4=Wolayitta, and 5=Sidamigna
+    ',
+    x = 'Language'
+  )
+num_crop_types <- data.frame(as.numeric(table(crop_menu$callerId)))
+num_crop_types$frequencies <- num_crop_types$as.numeric.table.crop_menu.callerId.
+
+summary(num_crop_types$frequencies)
+
+ggplot(num_crop_types, aes(frequencies)) +
+  geom_histogram(color="black", fill="red") +
+  labs(
+    title = 'Distribution of number crops ever selected by individual \n
+      Min.  1st Qu.  Median    Mean   3rd Qu.    Max. 
+  1.000     2.000     4.000      4.915     7.000     15.000 ',
+    x = 'Number of crops selected '
+  )
+```
+
+
+HOW MANY CROPS PER USER ARE LOOKED AT??????????
