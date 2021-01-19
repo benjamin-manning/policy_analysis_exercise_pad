@@ -1,6 +1,9 @@
 ---
 title: "PAD-ATA Call Log Analysis"
-output: html_notebook
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
 ---
 
 #### Libraries used in the Project and uploading data
@@ -19,7 +22,6 @@ log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
 #MAKE IT ALL UPPER!!!
 
 log_data$logInfo <- toupper(log_data$logInfo)
-
 
 ### GETTING THE DATE MONTH AND YEAR IF I WANT!!!
 extractdate <- function(date) {
@@ -684,3 +686,4 @@ ggplot(num_crop_types, aes(frequencies)) +
 
 
 HOW MANY CROPS PER USER ARE LOOKED AT??????????
+
