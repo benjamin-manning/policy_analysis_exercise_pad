@@ -1,0 +1,147 @@
+---
+title: "PAD-prediction"
+output:
+  html_notebook: default
+  word_document: default
+  pdf_document: default
+---
+
+#### Libraries used in the Project and uploading data
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(svMisc)
+library(ggplot2)
+library(gtable)
+library("ggpubr")
+library(data.table)
+
+
+log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
+
+#MAKE IT ALL UPPER!!!
+
+log_data$logInfo <- toupper(log_data$logInfo)
+
+### GETTING THE DATE MONTH AND YEAR IF I WANT!!!
+extractdate <- function(date) {
+    day <- format(date, format="%d")
+    month <- format(date, format="%m")
+    year <- format(date, format="%Y")
+
+    cbind(day, month, year)
+}
+
+#making first calls
+first_call<-extractdate(log_data$callTime)
+
+
+#making last call
+last_day <-substr(log_data$lastCallTime, 9, 10)
+last_month <- substr(log_data$lastCallTime, 6, 7)
+last_year <-substr(log_data$lastCallTime, 1, 4)
+
+log_data<-cbind(log_data, first_call,last_day,last_month,last_year)
+
+#Converting columns to numeric
+log_data$day <-as.numeric(log_data$day)
+log_data$last_day <- as.numeric(log_data$last_day)
+log_data$month <-as.numeric(log_data$month)
+log_data$last_month <- as.numeric(log_data$last_month)
+log_data$year <- as.numeric(log_data$year)
+log_data$last_year <- as.numeric(log_data$last_year )
+
+
+log_data$year <- log_data$year +log_data$month/12
+log_data$last_year <- log_data$last_year + log_data$last_month/12
+
+log_data$caller_lifetime <- log_data$last_year - log_data$year
+```
+
+#Reassessing content per user - I did it very wrong!
+
+
+
+```{r}
+content_listened <- filter(log_data, grepl("CONTENT",logInfo))
+content_listened <- filter(content_listened , !grepl("CONTENT MENU",logInfo))
+content_listened <- filter(content_listened , !grepl("CONTENT IS NOT AVAILABLE",logInfo))
+
+#Creating a content#_played column
+content_listened$content_played <- ifelse(str_detect(content_listened$logInfo, 'CONTENT PLAYED', negate = FALSE),1,0)
+content_listened$replay_request <- ifelse(str_detect(content_listened$logInfo, 'CONTENT REPLAY REQUESTED', negate = FALSE),1,0)
+
+content_played<-aggregate(content_listened$content_played,list(content_listened$callerId), FUN=sum)
+content_played <- content_played %>% 
+  rename(
+    con_play = x,
+    callerId = Group.1
+    )
+
+content_replay<-aggregate(content_listened$replay_request,list(content_listened$callerId), FUN=sum)
+content_replay <- content_replay %>% 
+  rename(
+    con_replay = x,
+    callerId = Group.1
+    )
+
+content_counts <- cbind(content_played, content_replay)
+
+content_counts$adjusted_con <- content_counts$con_play-content_counts$con_replay
+
+content_counts$callerId <- NULL
+
+summary(content_counts$adjusted_con)
+
+
+#graphing the true distribution of content played
+ggplot(content_counts, aes(x=adjusted_con)) +
+  geom_histogram(color="black", fill="green") +
+  xlim(0,100) +
+  labs(
+    title = 'Distribution of total Content listened to all Across all Calls (Outliers Excluded) \n
+  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.00    5.00   14.00   28.81   32.00  558.00 ',
+    x = 'Total Content Listen Across Calls'
+  )
+
+
+# Getting the number of calls per person
+calls_made <- log_data %>%
+  group_by(callerId, noCallsMade) %>%
+  count()
+
+
+#join between tables
+content_ratio <- merge(calls_made,content_counts,by="callerId")
+
+content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$noCallsMade
+
+ggplot(content_ratio, aes(x=ratio)) +
+  geom_histogram(color="black", fill="red") +
+  xlim(0, 2) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) \n
+    Min.  1st Qu.   Median     Mean   3rd Qu.     Max. 
+ 0.00000  0.06173   0.17369   0.56831   0.48276   22.333 ',
+    x = 'Content to Call Ratio'
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

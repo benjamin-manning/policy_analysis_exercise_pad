@@ -1,8 +1,8 @@
 ---
 title: "PAD-ATA Call Log Analysis"
 output:
-  word_document: default
   html_notebook: default
+  word_document: default
   pdf_document: default
 ---
 
@@ -115,7 +115,7 @@ Min. 1st Qu.  Median  Mean   3rd Qu.    Max.
   )
 
 
-#Distribution of contenet listened to
+#Distribution of content listened to
 
 content_listened <- log_data %>%
   group_by(callerId, noContentListened) %>%
