@@ -21,6 +21,10 @@ library(data.table)
 
 log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
 
+log_data_saver <- log_data
+
+log_data <- unique(log_data)
+
 #MAKE IT ALL UPPER!!!
 
 log_data$logInfo <- toupper(log_data$logInfo)
@@ -74,15 +78,16 @@ content_listened$content_played <- ifelse(str_detect(content_listened$logInfo, '
 content_listened$replay_request <- ifelse(str_detect(content_listened$logInfo, 'CONTENT REPLAY REQUESTED', negate = FALSE),1,0)
 
 content_played<-aggregate(content_listened$content_played,list(content_listened$callerId), FUN=sum)
+?rename
 content_played <- content_played %>% 
-  rename(
+  dplyr::rename(
     con_play = x,
     callerId = Group.1
     )
 
 content_replay<-aggregate(content_listened$replay_request,list(content_listened$callerId), FUN=sum)
 content_replay <- content_replay %>% 
-  rename(
+ dplyr::rename(
     con_replay = x,
     callerId = Group.1
     )
@@ -103,42 +108,106 @@ ggplot(content_counts, aes(x=adjusted_con)) +
   labs(
     title = 'Distribution of total Content listened to all Across all Calls (Outliers Excluded) \n
   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-   0.00    5.00   14.00   28.81   32.00  558.00 ',
+   0.00    3.00    8.00   17.79   20.00  279.00 ',
     x = 'Total Content Listen Across Calls'
   )
 
 
 # Getting the number of calls per person
 calls_made <- log_data %>%
-  group_by(callerId, noCallsMade) %>%
+  dplyr::group_by(callerId, noCallsMade, langId) %>%
   count()
 
 
 #join between tables
-content_ratio <- merge(calls_made,content_counts,by="callerId")
+content_ratio <- merge(content_counts, calls_made,by="callerId")
 
 content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$noCallsMade
 
+summary(content_ratio$ratio)
+
 ggplot(content_ratio, aes(x=ratio)) +
   geom_histogram(color="black", fill="red") +
-  xlim(0, 2) +
+  xlim(0, .25) +
   labs(
     title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) \n
-    Min.  1st Qu.   Median     Mean   3rd Qu.     Max. 
- 0.00000  0.06173   0.17369   0.56831   0.48276   22.333 ',
+   Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+ 0.00000  0.04099  0.11485  0.37226  0.30394 22.33333 ',
     x = 'Content to Call Ratio'
   )
 
+
+#per_language
+
+content_r <- content_ratio %>%
+  filter(langId == 1)
+
+ggplot(content_r, aes(x=ratio)) +
+  geom_histogram(color="black", fill="grey") +
+  xlim(0, 1) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) lang 1 ',
+    x = 'Content to Call Ratio'
+  )
+
+content_r <- content_ratio %>%
+  filter(langId == 2)
+
+ggplot(content_r, aes(x=ratio)) +
+  geom_histogram(color="black", fill="grey") +
+  xlim(0, 1) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) lang 2 ',
+    x = 'Content to Call Ratio'
+  )
+
+content_r <- content_ratio %>%
+  filter(langId == 3)
+
+ggplot(content_r, aes(x=ratio)) +
+  geom_histogram(color="black", fill="grey") +
+  xlim(0, 1) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) lang 3 ',
+    x = 'Content to Call Ratio'
+  )
+
+content_r <- content_ratio %>%
+  filter(langId == 4)
+
+ggplot(content_r, aes(x=ratio)) +
+  geom_histogram(color="black", fill="grey") +
+  xlim(0, 1) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) lang 4 ',
+    x = 'Content to Call Ratio'
+  )
+
+content_r <- content_ratio %>%
+  filter(langId == 5)
+
+ggplot(content_r, aes(x=ratio)) +
+  geom_histogram(color="black", fill="grey") +
+  xlim(0, 1) +
+  labs(
+    title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) lang 5 ',
+    x = 'Content to Call Ratio'
+  )
+
+hist(content_ratio$langId)
 ```
 
 
 
+```{r}
 
+#incoming <- filter(log_data, grepl("INCOMING CALL STARTED",logInfo))
 
+duplicate <- log_data %>%
+  group_by(callId, logInfo) %>%
+  count()
 
-
-
-
+```
 
 
 

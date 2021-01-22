@@ -19,6 +19,13 @@ library("ggpubr")
 
 log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
 
+log_data_saver <- log_data
+
+log_data <- unique(log_data)
+
+log_data$logInfo <- str_replace(log_data$logInfo, "  ", " ")
+
+view(log_data)
 #MAKE IT ALL UPPER!!!
 
 log_data$logInfo <- toupper(log_data$logInfo)
@@ -442,7 +449,7 @@ ggplot(land_prep_no_lang, aes(langId, fill = logInfo)) +
 
 ```{r}
 #GETTING THE CROP MENU FROM MENU 1 (rain/preplanting/seed variety sub menu)
-seed_variety <- filter(log_data, grepl("CONTENT PLAYED - SEED VARITY - ",logInfo))
+seed_variety <- filter(log_data, grepl("CONTENT PLAYED - SEED VARITY",logInfo))
 
 seed_variety_final <- seed_variety %>%
   group_by(callerId, logInfo, langId) %>%
@@ -492,6 +499,7 @@ ggplot(seed_variety_no_lang, aes(x=logInfo)) +
     x = 'Content Selected',
     y= 'count'
   )
+
 
 ```
  
@@ -685,5 +693,145 @@ ggplot(num_crop_types, aes(frequencies)) +
 ```
 
 
-HOW MANY CROPS PER USER ARE LOOKED AT??????????
+What about a nice crop breakdown per month?
+```{r}
+
+crop_month <- log_data %>%
+  filter(grepl("CROP MENU - ",logInfo)) %>%
+  filter(!grepl("HHI",logInfo)) %>%
+  filter(!grepl("REPLAYED",logInfo))
+
+crop_month <- crop_month %>%
+  group_by(callerId, logInfo,month) %>%
+  count()
+
+crop_month$logInfo<- str_replace(crop_month$logInfo, "CROP MENU - ", "")
+crop_month$logInfo<- str_replace(crop_month$logInfo, " SELECTED", "")
+crop_month$logInfo<- str_replace(crop_month$logInfo, "GO TO", "")
+
+
+crop_track <- crop_month %>%
+  filter(month == 1)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown Jan',
+    x = 'Crops',
+    y= 'count'
+  )
+  
+crop_track <- crop_month %>%
+  filter(month == 2)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown feb',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 3)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown mar',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 4)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown april',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 5)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown may',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 6)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown june',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 7)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown july',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 8)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown aug',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 9)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown sep',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 10)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown oct',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 11)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown nov',
+    x = 'Crops',
+    y= 'count'
+  )
+crop_track <- crop_month %>%
+  filter(month == 12)
+ggplot(crop_track, aes(x=logInfo)) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar()+
+  labs(
+    title = 'Crop menu breakdown dec',
+    x = 'Crops',
+    y= 'count'
+  )
+
+
+```
 
