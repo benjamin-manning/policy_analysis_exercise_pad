@@ -80,7 +80,7 @@ lang_spoken <- log_data %>%
   group_by(callerId, langId) %>%
   count()
 
-#Ditribution of languages spoken
+#Distribution of languages spoken
 ggplot(data=lang_spoken, aes(x=langId)) +
   geom_bar()+
   labs(
@@ -91,7 +91,7 @@ ggplot(data=lang_spoken, aes(x=langId)) +
   )
 
 
-#Ditribution otiem difference beetween firs tand last call
+#Distribution of time difference bewtween first and last call
 
 lifetime<- log_data %>%
   group_by(callerId, caller_lifetime) %>%
@@ -121,39 +121,71 @@ Min. 1st Qu.  Median  Mean   3rd Qu.    Max.
     x = 'Total number of calls'
   )
 
+content_listened <- filter(log_data, grepl("CONTENT",logInfo))
+content_listened <- filter(content_listened , !grepl("CONTENT MENU",logInfo))
+content_listened <- filter(content_listened , !grepl("CONTENT IS NOT AVAILABLE",logInfo))
 
-#Distribution of content listened to
+#Creating a content#_played column
+content_listened$content_played <- ifelse(str_detect(content_listened$logInfo, 'CONTENT PLAYED', negate = FALSE),1,0)
+content_listened$replay_request <- ifelse(str_detect(content_listened$logInfo, 'CONTENT REPLAY REQUESTED', negate = FALSE),1,0)
 
-content_listened <- log_data %>%
-  group_by(callerId, noContentListened) %>%
-  count()
+content_played<-aggregate(content_listened$content_played,list(content_listened$callerId), FUN=sum)
+?rename
+content_played <- content_played %>% 
+  dplyr::rename(
+    con_play = x,
+    callerId = Group.1
+    )
 
-#summary(content_listened$noContentListened)
+content_replay<-aggregate(content_listened$replay_request,list(content_listened$callerId), FUN=sum)
+content_replay <- content_replay %>% 
+ dplyr::rename(
+    con_replay = x,
+    callerId = Group.1
+    )
 
-ggplot(content_listened, aes(x=noContentListened)) +
+content_counts <- cbind(content_played, content_replay)
+
+content_counts$adjusted_con <- content_counts$con_play-content_counts$con_replay
+
+content_counts$callerId <- NULL
+
+summary(content_counts$adjusted_con)
+
+
+#graphing the true distribution of content played
+ggplot(content_counts, aes(x=adjusted_con)) +
   geom_histogram(color="black", fill="green") +
-  xlim(50, 250) +
+  xlim(0,100) +
   labs(
     title = 'Distribution of total Content listened to all Across all Calls (Outliers Excluded) \n
-  Min. 1st Qu.  Median  Mean  3rd Qu.    Max. n\
-  50.00   58.00   74.50   99.97  105.00   2367.00 ',
+      Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.00    3.00    8.00   17.79   20.00  279.00 ',
     x = 'Total Content Listen Across Calls'
   )
 
 
-# Ratio of content per call - creating the ratio and graphing the results
-content_call_ratio_df <- inner_join(calls_made,content_listened,by="callerId")
-content_call_ratio_df$ratio <- content_call_ratio_df$noContentListened/content_call_ratio_df$noCallsMade
+# Getting the number of calls per person
+calls_made <- log_data %>%
+  dplyr::group_by(callerId, noCallsMade, langId) %>%
+  count()
 
-#summary(content_call_ratio_df$ratio)
 
-ggplot(content_call_ratio_df, aes(x=ratio)) +
+#join between tables
+content_ratio <- left_join(calls_made, content_counts,by="callerId")
+content_ratio[is.na(content_ratio)] <- 0
+
+content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$noCallsMade
+
+summary(content_ratio$ratio)
+
+ggplot(content_ratio, aes(x=ratio)) +
   geom_histogram(color="black", fill="red") +
-  xlim(0, 5) +
+  xlim(0, 1) +
   labs(
     title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) \n
-    Min.         1st Qu.   Median     Mean    3rd Qu.      Max.
- 0.05963    0.84598  1.18586  1.40733  1.69773   22.33333  ',
+ Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+ 0.00000  0.02305  0.08475  0.32163  0.25878 22.33333 ',
     x = 'Content to Call Ratio'
   )
 
