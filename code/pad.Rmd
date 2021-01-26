@@ -1,8 +1,8 @@
 ---
 title: "PAD-ATA Call Log Analysis"
 output:
-  html_notebook: default
   word_document: default
+  html_notebook: default
   pdf_document: default
 ---
 
@@ -414,7 +414,7 @@ land_prep_final <- land_prep %>%
 land_prep_final$logInfo<- str_replace(land_prep_final$logInfo, "CONTENT PLAYED - LAND PREPARATION -", "")
 
 ggplot(data=land_prep_final, aes(x=logInfo)) +
-  theme(axis.text.x = element_text(angle = 45, hjust=1))+
+  theme(axis.text.x = element_text(angle = 45, hjust=2))+
   geom_bar()+
   labs(
     title = 'RAIN MENU/PRE PLANTING/LAND PREPARATION
@@ -632,7 +632,7 @@ seed_rate_final <- seed_rate %>%
 seed_rate_final$logInfo<- str_replace(seed_rate_final$logInfo, "CONTENT PLAYED - SEED RATE -", "")
 
 ggplot(data=seed_rate_final, aes(x=logInfo)) +
-  theme(axis.text.x = element_text(angle = 90))+
+  theme(axis.text.x = element_text(angle = 45,hjust=1))+
   geom_bar()+
   labs(
     title = 'RAIN MENU/PLANTING/SEED RATE
@@ -663,7 +663,7 @@ ggplot(seed_rate_no_lang, aes(langId, fill = logInfo)) +
   )
 #no language
 ggplot(seed_rate_no_lang, aes(x=logInfo)) +
-  theme(axis.text.x = element_text(angle = 90))+
+  theme(axis.text.x = element_text(angle = 45, hjust=1))+
   geom_bar()+
   labs(
     title = 'RAIN MENU/PLANTING/SEED RATE
@@ -725,7 +725,7 @@ ggplot(num_crop_types, aes(frequencies)) +
 ```
 
 
-What about a nice crop breakdown per month?
+#What about a nice crop breakdown per month?
 ```{r}
 
 crop_month <- log_data %>%

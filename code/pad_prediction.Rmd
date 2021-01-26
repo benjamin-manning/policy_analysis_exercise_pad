@@ -80,6 +80,7 @@ lifetime<- log_data %>%
   group_by(callerId, caller_lifetime) %>%
   count()
 
+
 #distribution of calls made
 
 calls_made <- log_data %>%
@@ -148,9 +149,40 @@ write.csv(prediction_df, '~/Desktop/PAE/github/data/caller_data.csv', row.names 
 ```
 
 
-#Extrating date again
+Same thing per call
 ```{r}
 
+content_list_call <- filter(log_data, grepl("CONTENT",logInfo))
+content_list_call <- filter(content_list_call , !grepl("CONTENT MENU",logInfo))
+content_list_call <- filter(content_list_call , !grepl("CONTENT IS NOT AVAILABLE",logInfo))
+
+#Creating a content#_played column
+content_list_call$content_played <- ifelse(str_detect(content_list_call$logInfo, 'CONTENT PLAYED', negate = FALSE),1,0)
+content_list_call$replay_request <- ifelse(str_detect(content_list_call$logInfo, 'CONTENT REPLAY REQUESTED', negate = FALSE),1,0)
+
+content_played<-aggregate(content_list_call$content_played,list(content_list_call$callId), FUN=sum)
+?rename
+content_played <- content_played %>% 
+  dplyr::rename(
+    con_play = x,
+    callId = Group.1
+    )
+
+content_replay<-aggregate(content_list_call$replay_request,list(content_list_call$callId), FUN=sum)
+content_replay <- content_replay %>% 
+ dplyr::rename(
+    con_replay = x,
+    callId = Group.1
+    )
+
+content_counts_call <- cbind(content_played, content_replay)
+
+content_counts_call$adjusted_con <- content_counts_call$con_play-content_counts_call$con_replay
+
+content_counts_call$callId <- NULL
+
+
+# YOU HAVE TO JOIN BACK TO FIND OUT THE ZERO CONTENT
 ```
 
 
