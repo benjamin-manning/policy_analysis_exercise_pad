@@ -64,10 +64,7 @@ log_data$last_year <- log_data$last_year + log_data$last_month/12
 log_data$caller_lifetime <- log_data$last_year - log_data$year
 ```
 
-#Reassessing content per user - I did it very wrong!
-
-
-
+DOING THE WHOLE DF PER CALLER - INCORRECT, BUT WORTH KEEPING!
 ```{r}
 lang_spoken <- log_data %>%
   group_by(callerId, langId) %>%
@@ -183,10 +180,46 @@ content_counts_call$callId <- NULL
 
 
 # YOU HAVE TO JOIN BACK TO FIND OUT THE ZERO CONTENT
+
+prediction <- log_data %>%
+  dplyr::group_by(callerId, noCallsMade, noContentListened,caller_lifetime,
+                  day,month,year,last_day,last_month,last_year) %>%
+  count()
+
+calls_made_total <- log_data %>%
+  dplyr::group_by(callId, noCallsMade, noContentListened,caller_lifetime,
+                  day,month,year,last_day,last_month,last_year) %>%
+  count()
+
+
+per_call_df <-  left_join(calls_made_total, content_counts_call,by="callId")
+per_call_df[is.na(per_call_df)] <- 0
+
+per_call_df$depth <- per_call_df$n
+
+per_call_df$content <- ifelse(per_call_df$con_play > 0, 1,0)
+
+class(log_data$eventTime[10]-log_data$eventTime[20])
 ```
 
 
+#get the length of every single call  and time to content
+```{r}
 
+#doing call length
+call_length<- dplyr::filter(log_data, grepl("INCOMING",logInfo)|grepl("HUNG",logInfo))
+call_length <- call_length %>%
+    group_by(callId) %>%
+    mutate(call_time = eventTime - lag(eventTime))
 
+#time to content 1
+time_to_content<- dplyr::filter(log_data, grepl("INCOMING",logInfo)|grepl("CONTENT PLAYED",logInfo))
+time_to_content<- time_to_content%>%
+    group_by(callId) %>%
+    mutate(to_content = eventTime - lag(eventTime))
 
+time_to_content <-time_to_content %>% 
+  group_by(callId) %>% 
+  filter(row_number()==2)
 
+```

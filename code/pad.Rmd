@@ -167,29 +167,38 @@ ggplot(content_counts, aes(x=adjusted_con)) +
 
 # Getting the number of calls per person
 calls_made <- log_data %>%
-  dplyr::group_by(callerId, noCallsMade, langId) %>%
+  dplyr::group_by(callId) %>%
+  count()
+
+calls_made_id <- log_data %>%
+  dplyr::group_by(callId, callerId) %>%
   count()
 
 
 #join between tables
-content_ratio <- left_join(calls_made, content_counts,by="callerId")
+content_ratio <- left_join(calls_made_id, content_counts,by="callerId")
 content_ratio[is.na(content_ratio)] <- 0
 
-content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$noCallsMade
+content_ratio <- content_ratio %>%
+  dplyr::group_by(callerId, con_play, con_replay, adjusted_con) %>%
+  count()
+
+content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$n
 
 summary(content_ratio$ratio)
 
 ggplot(content_ratio, aes(x=ratio)) +
   geom_histogram(color="black", fill="red") +
-  xlim(0, 1) +
+  xlim(0,2)+
   labs(
     title = 'Distribution of ratio of content listened to Calls (Outliers Excluded) \n
- Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
- 0.00000  0.02305  0.08475  0.32163  0.25878 22.33333 ',
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     
+ 0.0000  0.5614  1.0000  1.2500  1.5292 13.4000 ',
     x = 'Content to Call Ratio'
   )
 
 
+sum(content_ratio$n)
 ```
 
 ### TOP MENU
