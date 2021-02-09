@@ -25,7 +25,6 @@ log_data <- unique(log_data)
 
 log_data$logInfo <- str_replace(log_data$logInfo, "  ", " ")
 
-view(log_data)
 #MAKE IT ALL UPPER!!!
 
 log_data$logInfo <- toupper(log_data$logInfo)
@@ -115,7 +114,7 @@ ggplot(calls_made, aes(x=noCallsMade)) +
   geom_histogram(color="black", fill="blue") +
   xlim(0,350) +
   labs(
-    title = 'Distribution of calls made per individual (Outliers Excluded) \n
+    title = 'Distribution of calls made per individual over lifetime (Outliers Excluded) \n
 Min. 1st Qu.  Median  Mean   3rd Qu.    Max. 
     3.0    45.0    69.0     99.9    106.0    7110.0 ',
     x = 'Total number of calls'
@@ -225,6 +224,7 @@ sum(content_ratio$n)
  **Additionally, we also visualized this same selection divided by language to see if the patterns of seleciont are similar or different across langauges**v
  
 ```{r}
+#STARTING HERE IS FOR UNIQUE CALLERS
 # filtering out top Menu keys
 
 top_menu <-filter(log_data, grepl("TOP MENU",logInfo))
@@ -256,7 +256,41 @@ ggplot(top_menu, aes(langId, fill = logInfo)) +
     x = 'Language'
   )
 
+#STARTING HERE IS FOR UNIQUE CALLS
 
+top_menu_call <-filter(log_data, grepl("TOP MENU",logInfo))
+
+#cleaning the axis
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "TOP MENU - ", "")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " PRESSED", "")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " PRESSED", "")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " SELECTED", "")
+
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RAIN OPTION", "1 - RAIN OPTION")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "HHI OPTION", "2 - HHI OPTION")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "LIVESTOCK OPTION", "3 - LIVESTOCK OPTION")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "COVID OPTION", "4 - COVID OPTION")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RESET PROFILE OPTION", "\\* - RESET PROFILE")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "TOP MENU REPLAYED", "\\# - TOP MENU REPLAYED")
+
+top_menu_call <- top_menu_call %>%
+  group_by(callId, logInfo) %>%
+  count()
+
+top_menu_call<- top_menu_call[match(unique(top_menu_call$callId), top_menu_call$callId),]
+
+ggplot(top_menu_call, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 25, hjust =1))+
+  geom_bar(color='black', fill='red')+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  ylim(0,6500)+
+  labs(
+    title = 'Distirution of Top Menu Options Selected per Call with Number Pressed Indicated',
+    x = 'Top Menu Options',
+    y='Number of Calls'
+  )
+unique(top_menu_call$callId)
+class(log_data)
 ```
  
  
@@ -285,7 +319,7 @@ ggplot(top_menu, aes(langId, fill = logInfo)) +
 
 
 ```{r}
-# Pulling out the rain Menu
+# Pulling out the rain Menu By CALLLER
 
 #RAIN == HHI_RAIN
 rain_menu <- filter(log_data, grepl("MAIN MENU - ",logInfo))
@@ -314,6 +348,87 @@ ggplot(data=rain_menu, aes(x=logInfo)) +
   )
 
 
+
+#DOING IT BY CALL!!!!
+rain_menu_call <- filter(log_data, grepl("MAIN MENU - ",logInfo))
+rain_menu_call <- filter(rain_menu_call, !grepl("LIVESTOCK MAIN MENU",logInfo))
+rain_menu_call <- filter(rain_menu_call, !grepl("HHI MAIN MENU",logInfo))
+rain_menu_call <- filter(rain_menu_call, !grepl("COVID-19 MAIN MENU",logInfo))
+
+#grouping the observations
+rain_menu_call<-rain_menu_call %>%
+  group_by(callId, logInfo,) %>%
+  count()
+
+rain_menu_call<- rain_menu_call[match(unique(rain_menu_call$callId), rain_menu_call$callId),]
+
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "MAIN MENU - ", "")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, " SELECTED", "")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, " PRESSED", "")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, " OPTION", "")
+
+
+#FIxing the HHI menu and adding numbeers
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PRE PLANTING", "1 - PREPLZNTING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PLANTING", "2 - PLANTING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "1 - PREPLZNTING", "1 - PREPLANTING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "CROP PROTECTION", "3 - CROP PROTECTION")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "FERTILIZER SIDE DRESSING", "4 - FERTILIZER DRESSING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "POST HARVEST AND PROCESSING", "5 - POST HARVEST/PROCESSING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "GO TO MAIN MENU", "* - GO TO MAIN MENU")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "MAIN MENU REPLAYED", "# - MAIN MENU REPLAYED")
+
+#plotting rain menu breakdown
+ggplot(data=rain_menu_call, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 25, hjust =1))+
+  geom_bar(color='black', fill='blue',position = position_dodge( 0.3))+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  ylim(0,3250)+
+  labs(
+    title = 'Distirution of Rain Menu Options Selected per Call',
+    x = 'Rain Menu Options',
+    y='Number of Calls'
+  )
+
+#GETTING HHI MENU PER CALL
+HHI_menu_call <- filter(log_data, grepl("HHI MAIN MENU - ",logInfo))
+
+#grouping the observations
+HHI_menu_call<-HHI_menu_call %>%
+  group_by(callId, logInfo,) %>%
+  count()
+
+HHI_menu_call<- HHI_menu_call[match(unique(HHI_menu_call$callId), HHI_menu_call$callId),]
+
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HHI MAIN MENU - ", "")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, " SELECTED", "")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, " PRESSED", "")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, " OPTION", "")
+
+
+#FIxing the HHI menu and adding numbeers
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PRE PLANTING", "1 - PREPLANTING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PLANTING AND TRANSPLANTING", "2 - PLANTING/TRANSPLANTING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARROWING AND EARTHNING", "3 - HARROWING/EARTHNING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "IRRIGATING CROPS", "4 - IRRIGATING CROPS")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PROTECTING CROPS", "5 - PROTECTING CROPS")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "APPLYING FERTILIZER", "6 - APPLYING FERTILIZER")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARVESTING AND PROCESSING", "7 - HARVESTING/PROCESSING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "GO TO MAIN MENU", "* - GO TO MAIN MENU")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HHI MAIN MENU REPLAYED", "# - HHI MAIN MENU REPLAYED")
+
+
+#plotting rain menu breakdown
+ggplot(data=HHI_menu_call, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 30, hjust =1))+
+  geom_bar(color='black', fill='green',position = position_dodge( 0.3))+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  ylim(0,1300)+
+  labs(
+    title = 'Distirution of HHI Menu Options Selected per Call',
+    x = 'HHI Menu Options',
+    y='Number of Calls'
+  )
 
 ```
 
@@ -732,6 +847,201 @@ ggplot(num_crop_types, aes(frequencies)) +
     x = 'Number of crops selected '
   )
 ```
+
+
+```{r}
+#GETTING BOTH THE CROP MENUS for both rain and hhi
+rain_crop_menu <- filter(log_data, grepl("CROP MENU - ",logInfo))
+rain_crop_menu <- filter(rain_crop_menu, !grepl("HHI",logInfo))
+
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU - ", "")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, " SELECTED", "")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, " PTION", "OPTION")
+table(rain_crop_menu$logInfo)
+
+
+#ADDING THE NUMBERS
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "BARLEY OPTION", "1 - BARLEY OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MAIZE OPTION", "2 - MAIZE OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SORGHUM OPTION", "3 - SORGHUM OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "TEF OPTION", "4 - TEF OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "WHEAT OPTION", "5 - WHEAT OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SESAME OPTION", "6 - SESAME OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "FAVA BEAN OPTION", "7 - FAVA BEAN OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CHICKPEA OPTION", "8 - CHICKPEA OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COMMON BEANOPTION", "9 - COMMON BEAN OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COTTON OPTION", "10 - COTTON OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU REPLAYED", "# - CROP MENU REPLAYED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "* - GO TO MAIN MENU OPTION")
+
+#fixes
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MALT 1 - ", "")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "DUREM 5 - ", "")
+
+
+
+#plotting rain
+ggplot(rain_crop_menu, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar(fill='black')+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  ylim(0,3200)+
+  labs(
+    title = 'Rain Crop menu Total Selections with Button Choices',
+    x = 'Crops',
+    y= 'count'
+  )
+
+
+#getting the HHI MENU
+hhi_crop_menu <- filter(log_data, grepl("HHICROP MENU - ",logInfo))
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "HHICROP MENU - ", "")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, " SELECTED", "")
+table(hhi_crop_menu$logInfo)
+
+#ADDING THE NUMBERS
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "POTATO OPTION", "1 - POTATO OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CARROT OPTION", "2 - CARROT OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "ONION OPTION", "3 - ONION OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GARLIC OPTION", "4 - GARLIC OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "TOMATO OPTION", "5 - TOMATO OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "PAPER OPTION", "6 - PEPPER OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "HEAD CABBAGE OPTION", "7 - HEAD CABBAGE OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CROP MENU REPLAYED", "# - CROP MENU REPLAYED")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "* - GO TO MAIN MENU OPTION")
+
+#plotting HHI
+ggplot(hhi_crop_menu, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar(fill='brown')+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  ylim(0,1750)+
+  labs(
+    title = 'HHI Crop Menu Total Selections with Button Choices',
+    x = 'Crops',
+    y= 'count'
+  )
+
+```
+
+
+```{r}
+
+# TOTAL CROPS BY CONENT PLAYEDE EVER!!!!
+content_crop_played <- filter(log_data, grepl("CONTENT PLAYED - ",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("LIVESTOCK",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("APICULTURE",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("COVID",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("DAIRY",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("FAMILY",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("CATTLE",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("FATTENING",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("POULTRY",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("SAFE",logInfo))
+content_crop_played <- filter(content_crop_played, !grepl("MISCONCEPTIONS",logInfo))
+
+#getting rid of the languages/content
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- AMHARIC", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- OROMIFFA", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- TIGRIGNA", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- WOLAYITTA", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- WOLAYTIGNA", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "- SIDAMIGNA", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "CONTENT PLAYED - ", "")
+
+#getting rid of menu labels
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "APPLYING FERTILIZER - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "DISEASE CONTROL - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "FERTILIZER APPLICATION RATE - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "FERTILIZER SIDE DRESSING - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HARROWING AND EARTHNING UP - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HARVESTING - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HARVESTING TECHNIQUE - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HOW TO ADD WATER - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HOW TO PLANT - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HOW TO SELECT AND BUY SEEDS - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "INSECT CONTROL - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "LAND PREPARATION - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "MANAGING WEEDS - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "MOISTURE CONSERVATION - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "OPTIMUM SPACING BETWEEN ROWS AND PLANTS - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PLOT PREPARATION - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PRE-IRRIGATION - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PROCESSING - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "\\(", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "\\)", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PROCESSING HHI - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PROTECTION ON INSECTS AND DISEASES - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SEED RATE - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SEED VARITY - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SEED VARITY -", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SOIL DEPTH - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SOIL DEPTH -", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "THRESHING AND CLEANING - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "TRANSPLANTING - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WEED CONTROL - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - DEGA - CLAY - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HEN AND HOW MUCH WATER TO ADD - DEGA - LOAM - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - KOLA - CLAY - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - KOLA - SAND - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - DEGA - SAND - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - KOLA - LOAM - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - WOYENADEGA - CLAY - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - WOYENADEGA - LOAM - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN AND HOW MUCH WATER TO ADD - WOYENADEGA - SAND - ", "")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEN TO HARVEST - ", "")
+
+#fixing extra changes
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, " ", "")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WC", "C")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WG", "G")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WO", "O")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WP", "P")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WT", "T")
+content_crop_played$logInfo<- str_replace_all(content_crop_played$logInfo, "WHEADCABBAGE", "HEADCABBAGE")
+
+#ADDING THE NUMBERS
+#ADDING THE NUMBERS
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "POTATO", "1 - POTATO")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "CARROT", "2 - CARROT")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "ONION", "3 - ONION")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "GARLIC", "4 - GARLIC")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "TOMATO", "5 - TOMATO")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "PEPPER", "6 - PEPPER OPTION")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "HEADCABBAGE", "7 - HEAD CABBAGE")
+
+
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "BARLEY", "1 - BARLEY")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "MAIZE", "2 - MAIZE")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SORGHUM", "3 - SORGHUM")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "TEF", "4 - TEF")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "WHEAT", "5 - WHEAT")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "SESAME", "6 - SESAME")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "FAVA BEANS", "7 - FAVA BEAN")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "CHICKPEA", "8 - CHICKPEA")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "COMMONBEANS", "9 - COMMON BEANS")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "COTTON", "10 - COTTON")
+
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "DURAME5 - WHEAT", "DURAME WHEAT")
+content_crop_played$logInfo<- str_replace(content_crop_played$logInfo, "MALT1 - BARLEY", "MALT BARLEY")
+
+
+
+?geom_text
+ggplot(content_crop_played, aes(x=fct_infreq(logInfo))) +
+  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
+  geom_bar(fill='sky blue')+
+  geom_text(stat='count', aes(label=..count..), vjust=-1,size=3)+
+  ylim(0,2750)+
+  labs(
+    title = 'ALL Crops Ever Accessed Across All Calls with Labeled Buttons',
+    x = 'Crops',
+    y= 'count'
+  )
+```
+
+
+
 
 
 #What about a nice crop breakdown per month?

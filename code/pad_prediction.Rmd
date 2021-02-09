@@ -129,6 +129,41 @@ content_ratio[is.na(content_ratio)] <- 0
 
 content_ratio$ratio <- content_ratio$adjusted_con/content_ratio$noCallsMade
 
+# QUICKLY GETTING PER CALL for the average call
+
+
+tester <- log_data %>% 
+  group_by(callerId, callId) %>%
+  count()
+
+tester$n <- NULL
+
+tester <- tester%>% 
+  group_by(callerId) %>%
+  count()
+
+per_call_df_copy <- per_call_df
+per_call_per_caller <- aggregate(per_call_df$content, by=list(Category=per_call_df$callerId), FUN=sum)
+per_call_per_caller$callerId<- per_call_per_caller$Category
+
+per_call_per_caller <- left_join(per_call_per_caller, tester ,by="callerId")
+
+per_call_per_caller$ratio <- round(per_call_per_caller$x/per_call_per_caller$n,2)
+
+#THIS IS THE FINAL RATIO FOR CALLERS REEACHING CONTENT - THE PERCENTAGE OF TIMES A CALLER CALLS AND GETS TO CONTENT!!!!!!!!
+summary(per_call_per_caller$ratio)
+
+
+ggplot(per_call_per_caller, aes(x=ratio))+
+  geom_histogram(color="black", fill="green", bins=20) +
+  labs(
+    title = 'Percentage of Calls ending in Content grouped by caller
+     Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    0.0000  0.2900  0.5000  0.4752  0.6700  1.0000 ',
+    y='Count',
+    x='Percentage Reached Content'
+  )
+
 
 #Final join to get max possible data
 prediction <- log_data %>%
@@ -191,8 +226,16 @@ calls_made_total <- log_data %>%
                   day,month,year,last_day,last_month,last_year) %>%
   count()
 
+calls_callers <- log_data %>%
+  dplyr::group_by(callerId, callId) %>%
+  count()
+
 
 per_call_df <-  left_join(calls_made_total, content_counts_call,by="callId")
+
+#getting back the call id
+per_call_df <-  left_join(per_call_df , calls_callers ,by="callId")
+
 per_call_df[is.na(per_call_df)] <- 0
 
 per_call_df$depth <- per_call_df$n
@@ -200,6 +243,10 @@ per_call_df$depth <- per_call_df$n
 per_call_df$content <- ifelse(per_call_df$con_play > 0, 1,0)
 
 class(log_data$eventTime[10]-log_data$eventTime[20])
+
+summary(per_call_df$content)
+
+#VERY QUICKLY 
 ```
 
 
@@ -212,6 +259,33 @@ call_length <- call_length %>%
     group_by(callId) %>%
     mutate(call_time = eventTime - lag(eventTime))
 
+call_length <- call_length %>% 
+  drop_na() %>%
+  select(call_time)
+
+
+per_call_df <-  left_join(per_call_df, call_length,by="callId")
+
+per_call_df <- per_call_df %>%
+  drop_na()
+
+summary(as.numeric(per_call_df$call_time))
+
+ggplot(per_call_df , aes(x=call_time)) +
+  geom_histogram(color="black", fill="blue") +
+  xlim(0,1000)+
+  labs(
+    title = ' \n
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    2.0    22.0    77.0   143.9   189.0  3409.0',
+    x = 'Call length'
+  )
+
+
+?drop_na()
+
+#write.csv(per_call_df, '~/Desktop/PAE/github/data/per_call_df.csv', row.names = FALSE)
+
 #time to content 1
 time_to_content<- dplyr::filter(log_data, grepl("INCOMING",logInfo)|grepl("CONTENT PLAYED",logInfo))
 time_to_content<- time_to_content%>%
@@ -222,4 +296,117 @@ time_to_content <-time_to_content %>%
   group_by(callId) %>% 
   filter(row_number()==2)
 
+ggplot(time_to_content , aes(x=to_content)) +
+  geom_histogram(color="black", fill="blue") +
+  xlim(0,400)+
+    labs(
+    title = ' \n
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    2.0    22.0    77.0   143.9   189.0  3409.0',
+    x = 'time to content'
+  )
+  
+
+ggplot(per_call_per_caller, aes(x=n)) +
+  geom_histogram(color="black", fill="blue")+
+  xlim(0,50)
+
 ```
+
+#distributions of positives versus negatives and call time
+
+
+```{r}
+made_it <- per_call_df %>%
+  filter(content == 1)
+
+summary(as.numeric(made_it$call_time))
+
+no_made <- per_call_df %>%
+  filter(content == 0)
+
+summary(as.numeric(no_made$call_time))
+
+ggplot(per_call_df, aes(call_time))+
+  geom_histogram(aes(fill=as.factor(content)), position = "identity", bins = 30, alpha = 0.4)+
+  scale_fill_manual(
+    name = "Content Reached",
+    values = c("red", "green"),
+    labels = c("No", "Yes"))+
+  labs(
+    title='Distribution of Calls',
+    x='Total Seconds On Call')+
+  xlim(0,1000)
+  
+
+
+
+```
+
+
+Showing how long it took for each color to get to call
+```{r}
+
+summary(as.numeric(no_made$call_time))
+
+ggplot(time_to_content , aes(x=to_content)) +
+  geom_histogram(aes(fill="green"),alpha = 0.4) +
+  geom_histogram(data = no_made, aes(as.numeric(call_time), fill="red"),alpha = 0.4) +
+  geom_histogram(data = made_it, aes(as.numeric(call_time), fill="blue"),alpha = 0.4)+
+  scale_fill_manual(
+    name = "(John) Legend",
+    values = c("green", "blue", 'red'),
+    labels = c("Content Reached - \n Total time on call", "Content Reached - \n Time to 1st Content", "No Conted Reached - \n Total time on call"))+
+  xlim(0,100)+
+  #theme_minimal(base_size = 14) +
+  #theme(legend.key = element_rect(color = NA, fill = NA),
+  #      legend.key.size = unit(1, "cm")) +
+  #theme(legend.title.align = .5)+
+  theme_bw()+
+   theme(legend.key.size = unit(3, 'lines'))+
+  labs(x = 'Time in Seconds')
+```
+
+
+```{r}
+no_made$depth <- no_made$n.x
+
+ggplot(no_made, aes(x=n.x))+
+  geom_histogram(color="black", fill="blue") +
+  xlim(0,20)+
+    labs(
+    x = 'steps'
+  )
+
+
+no_content_5step <- no_made %>%
+  filter(depth ==5)
+
+no_content_5step <- right_join(log_data, no_content_5step, by='callId')
+
+
+aggregate(no_content_5step$callId, by=list(no_content_5step$logInfo), FUN=last)
+
+no_content_5step <- no_content_5step %>% group_by(callId) %>% summarise(last_log = nth(logInfo,4))
+
+table(no_content_5step$last_log)
+
+```
+
+
+
+
+# HOW LONG ARE PEOPLE SPENDING ON THE CROP MENU
+
+```{r}
+#doing call length
+crop_menu_length<- dplyr::filter(log_data, grepl("INCOMING",logInfo)|grepl("HUNG",logInfo))
+call_length <- call_length %>%
+    group_by(callId) %>%
+    mutate(call_time = eventTime - lag(eventTime))
+
+call_length <- call_length %>% 
+  drop_na() %>%
+  select(call_time)
+```
+
