@@ -18,6 +18,7 @@ library(gtable)
 library("ggpubr")
 
 log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
+log_data <- read_csv("~/Desktop/PAE/github/data/benData_weakCallers.csv")
 
 log_data_saver <- log_data
 
@@ -43,9 +44,9 @@ first_call<-extractdate(log_data$callTime)
 
 
 #making last call
-last_day <-substr(log_data$lastCallTime, 9, 10)
-last_month <- substr(log_data$lastCallTime, 6, 7)
-last_year <-substr(log_data$lastCallTime, 1, 4)
+last_day <-substr(log_data$eventTime, 9, 10)
+last_month <- substr(log_data$eventTime, 6, 7)
+last_year <-substr(log_data$eventTime, 1, 4)
 
 log_data<-cbind(log_data, first_call,last_day,last_month,last_year)
 
@@ -81,9 +82,11 @@ lang_spoken <- log_data %>%
 
 #Distribution of languages spoken
 ggplot(data=lang_spoken, aes(x=langId)) +
-  geom_bar()+
+  geom_bar(fill='red')+
+  geom_text(stat='count', aes(label=..count../16445), vjust=-1)+
+  ylim(0,600)+
   labs(
-    title = 'Distribution of Languages
+    title = 'Distribution of Languages by Caller
     1 = Amharic, 2=Oromiffa, 3=Tigrigna, 4=Wolayitta, and 5=Sidamigna',
     x = 'Language',
     y= 'count'
@@ -875,8 +878,8 @@ rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU REPLAYED
 rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "* - GO TO MAIN MENU OPTION")
 
 #fixes
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MALT 1 - ", "")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "DUREM 5 - ", "")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MALT 1 - ", "MALT ")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "DUREM 5 - ", "DUREM ")
 
 
 

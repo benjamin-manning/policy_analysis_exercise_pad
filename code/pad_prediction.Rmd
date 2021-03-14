@@ -17,17 +17,56 @@ library(ggplot2)
 library(gtable)
 library("ggpubr")
 library(data.table)
+library(lfe)
+library(haven)
 
 
 log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
+#log_data <- read_csv("~/Desktop/PAE/github/data/benData_weakCallers.csv")
+#log_data <- read_csv("~/Desktop/benData_weakCallers.csv")
+
+
+log_data$logInfo <- toupper(log_data$logInfo)
+#creating the unique call column
+
+#getting rid of the duplicate phone hang ups
+# row_dump <- c()
+# 
+# for (i in 1:length(log_data$logInfo)){
+#   if (str_detect(log_data$logInfo[i], 'HUNG UP')){
+#     if (str_detect(log_data$logInfo[i-1], 'HUNG UP')){
+#       row_dump <- append(row_dump, i)
+#     }
+#   }
+#   else{
+#     log_data$logInfo[i] = log_data$logInfo[i]
+#   }
+# }
+# 
+# log_data <- log_data %>% 
+#   slice(-row_dump)
+# 
+# #creating call Id
+# counter <-  0
+# for (i in 1:length(log_data$callId)){
+#   if (str_detect(log_data$logInfo[i], 'INCOMING')){
+#     counter <- counter + 1
+#     log_data$callId[i] <- counter
+#   }
+#   else{
+#     log_data$callId[i] <- counter
+#   }
+# }
+
+
+
+
 
 log_data_saver <- log_data
 
 log_data <- unique(log_data)
 
 #MAKE IT ALL UPPER!!!
-
-log_data$logInfo <- toupper(log_data$logInfo)
 
 ### GETTING THE DATE MONTH AND YEAR IF I WANT!!!
 extractdate <- function(date) {
@@ -43,9 +82,9 @@ first_call<-extractdate(log_data$callTime)
 
 
 #making last call
-last_day <-substr(log_data$lastCallTime, 9, 10)
-last_month <- substr(log_data$lastCallTime, 6, 7)
-last_year <-substr(log_data$lastCallTime, 1, 4)
+last_day <-substr(log_data$eventTime, 9, 10)
+last_month <- substr(log_data$eventTime, 6, 7)
+last_year <-substr(log_data$eventTime, 1, 4)
 
 log_data<-cbind(log_data, first_call,last_day,last_month,last_year)
 
@@ -72,6 +111,7 @@ lang_spoken <- log_data %>%
 
 
 #Distribution of time difference bewtween first and last call
+
 
 lifetime<- log_data %>%
   group_by(callerId, caller_lifetime) %>%
@@ -142,41 +182,6 @@ tester <- tester%>%
   group_by(callerId) %>%
   count()
 
-per_call_df_copy <- per_call_df
-per_call_per_caller <- aggregate(per_call_df$content, by=list(Category=per_call_df$callerId), FUN=sum)
-per_call_per_caller$callerId<- per_call_per_caller$Category
-
-per_call_per_caller <- left_join(per_call_per_caller, tester ,by="callerId")
-
-per_call_per_caller$ratio <- round(per_call_per_caller$x/per_call_per_caller$n,2)
-
-#THIS IS THE FINAL RATIO FOR CALLERS REEACHING CONTENT - THE PERCENTAGE OF TIMES A CALLER CALLS AND GETS TO CONTENT!!!!!!!!
-summary(per_call_per_caller$ratio)
-
-
-ggplot(per_call_per_caller, aes(x=ratio))+
-  geom_histogram(color="black", fill="green", bins=20) +
-  labs(
-    title = 'Percentage of Calls ending in Content grouped by caller
-     Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-    0.0000  0.2900  0.5000  0.4752  0.6700  1.0000 ',
-    y='Count',
-    x='Percentage Reached Content'
-  )
-
-
-#Final join to get max possible data
-prediction <- log_data %>%
-  dplyr::group_by(callerId, noCallsMade, noContentListened,caller_lifetime,
-                  day,month,year,last_day,last_month,last_year) %>%
-  count()
-
-prediction$noCallsMade <- NULL
-
-
-prediction_df <-  left_join(content_ratio, prediction,by="callerId")
-
-write.csv(prediction_df, '~/Desktop/PAE/github/data/caller_data.csv', row.names = FALSE)
 
 ```
 
@@ -227,7 +232,7 @@ calls_made_total <- log_data %>%
   count()
 
 calls_callers <- log_data %>%
-  dplyr::group_by(callerId, callId) %>%
+  dplyr::group_by(callerId, callId, langId) %>%
   count()
 
 
@@ -246,6 +251,54 @@ class(log_data$eventTime[10]-log_data$eventTime[20])
 
 summary(per_call_df$content)
 
+
+ggplot(per_call_df, aes(x=langId)) +
+  geom_bar()+
+  
+  geom_text(stat='count', aes(label=..count../16445), vjust=-1)+
+  ylim(0,8500)+
+  labs(
+    title = 'Distribution of Languages by Call
+    1 = Amharic, 2=Oromiffa, 3=Tigrigna, 4=Wolayitta, and 5=Sidamigna',
+    x = 'Language',
+    y= 'count'
+  )
+
+per_call_df_copy <- per_call_df
+per_call_per_caller <- aggregate(per_call_df$content, by=list(Category=per_call_df$callerId), FUN=sum)
+per_call_per_caller$callerId<- per_call_per_caller$Category
+
+per_call_per_caller <- left_join(per_call_per_caller, tester ,by="callerId")
+
+per_call_per_caller$ratio <- round(per_call_per_caller$x/per_call_per_caller$n,2)
+
+#THIS IS THE FINAL RATIO FOR CALLERS REEACHING CONTENT - THE PERCENTAGE OF TIMES A CALLER CALLS AND GETS TO CONTENT!!!!!!!!
+summary(per_call_per_caller$ratio)
+
+
+ggplot(per_call_per_caller, aes(x=ratio))+
+  geom_histogram(color="black", fill="green", bins=20) +
+  labs(
+    title = 'Percentage of Calls ending in Content grouped by caller
+     Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    0.0000  0.2900  0.5000  0.4752  0.6700  1.0000 ',
+    y='Count',
+    x='Percentage Reached Content'
+  )
+
+
+#Final join to get max possible data
+prediction <- log_data %>%
+  dplyr::group_by(callerId, noCallsMade, noContentListened,caller_lifetime,
+                  day,month,year,last_day,last_month,last_year) %>%
+  count()
+
+prediction$noCallsMade <- NULL
+
+
+prediction_df <-  left_join(content_ratio, prediction,by="callerId")
+
+write.csv(per_call_df, '~/Desktop/PAE/github/data/caller_data.csv', row.names = FALSE)
 #VERY QUICKLY 
 ```
 
@@ -269,6 +322,10 @@ per_call_df <-  left_join(per_call_df, call_length,by="callId")
 per_call_df <- per_call_df %>%
   drop_na()
 
+per_call_df <- per_call_df[!duplicated(per_call_df$callId), ]
+
+write.csv(per_call_df, '~/Desktop/PAE/github/data/per_call_df.csv', row.names = FALSE)
+
 summary(as.numeric(per_call_df$call_time))
 
 ggplot(per_call_df , aes(x=call_time)) +
@@ -284,7 +341,7 @@ Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
 
 ?drop_na()
 
-#write.csv(per_call_df, '~/Desktop/PAE/github/data/per_call_df.csv', row.names = FALSE)
+write.csv(per_call_df, '~/Desktop/PAE/github/data/per_call_df.csv', row.names = FALSE)
 
 #time to content 1
 time_to_content<- dplyr::filter(log_data, grepl("INCOMING",logInfo)|grepl("CONTENT PLAYED",logInfo))
@@ -339,8 +396,10 @@ ggplot(per_call_df, aes(call_time))+
   xlim(0,1000)
   
 
+t.test(no_made$call_time, made_it$call_time, alternative = "two.sided", var.equal = FALSE)
 
-
+lm_nocontrol <- lm(content ~ call_time, per_call_df)
+summary(lm_nocontrol)
 ```
 
 
@@ -357,14 +416,14 @@ ggplot(time_to_content , aes(x=to_content)) +
     name = "(John) Legend",
     values = c("green", "blue", 'red'),
     labels = c("Content Reached - \n Total time on call", "Content Reached - \n Time to 1st Content", "No Conted Reached - \n Total time on call"))+
-  xlim(0,100)+
-  #theme_minimal(base_size = 14) +
-  #theme(legend.key = element_rect(color = NA, fill = NA),
-  #      legend.key.size = unit(1, "cm")) +
-  #theme(legend.title.align = .5)+
+  xlim(0,1000)+
   theme_bw()+
    theme(legend.key.size = unit(3, 'lines'))+
   labs(x = 'Time in Seconds')
+
+#t.test(time_to_content$to_content, no_made$call_time, alternative = "two.sided", var.equal = FALSE)
+
+#summary(as.numeric(made_it$call_time))
 ```
 
 
