@@ -385,15 +385,20 @@ no_made <- per_call_df %>%
 summary(as.numeric(no_made$call_time))
 
 ggplot(per_call_df, aes(call_time))+
-  geom_histogram(aes(fill=as.factor(content)), position = "identity", bins = 30, alpha = 0.4)+
+  geom_histogram(aes(fill=as.factor(content)), position = "identity", bins = 30, alpha = 0.7)+
   scale_fill_manual(
-    name = "Content Reached",
-    values = c("red", "green"),
+    name = "Content\nReached",
+    values = c("red", "darkgreen"),
     labels = c("No", "Yes"))+
   labs(
-    title='Distribution of Calls',
-    x='Total Seconds On Call')+
-  xlim(0,1000)
+    title='Distribution of Calls by Time',
+    x='Total Seconds On Call',
+    y='Count of Calls')+
+  xlim(0,1000)+
+  theme(plot.background = element_rect(fill = "#fcfff9"),
+        legend.background = element_rect(fill = "#fcfff9"),
+        panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"))
   
 
 t.test(no_made$call_time, made_it$call_time, alternative = "two.sided", var.equal = FALSE)

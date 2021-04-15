@@ -18,7 +18,7 @@ library(gtable)
 library("ggpubr")
 
 log_data <- read_csv("~/Desktop/PAE/github/data/logData.csv")
-log_data <- read_csv("~/Desktop/PAE/github/data/benData_weakCallers.csv")
+#log_data <- read_csv("~/Desktop/PAE/github/data/benData_weakCallers.csv")
 
 log_data_saver <- log_data
 
@@ -83,7 +83,6 @@ lang_spoken <- log_data %>%
 #Distribution of languages spoken
 ggplot(data=lang_spoken, aes(x=langId)) +
   geom_bar(fill='red')+
-  geom_text(stat='count', aes(label=..count../16445), vjust=-1)+
   ylim(0,600)+
   labs(
     title = 'Distribution of Languages by Caller
@@ -202,6 +201,50 @@ Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
 
 sum(content_ratio$n)
 ```
+```{r}
+lifetime<- log_data %>%
+  group_by(callerId, caller_lifetime) %>%
+  count()
+
+ggplot(data=lifetime, aes(x=caller_lifetime)) +
+  geom_histogram(fill='#c7d0d8', color='black')+
+  theme(plot.background = element_rect(fill = "#fcfff9"),
+        panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"),
+        panel.grid.minor = element_line(size=.1,colour = "black"),)+
+  labs(
+    title = 'Distribution of Call Lifetimes (2014 - 2020)',
+    x = 'Years Between First and Last Call',
+    y= 'Frequency'
+  )
+
+lang_spoken <- log_data %>%
+  group_by(callerId, langId) %>%
+  count()
+
+lang_spoken$langId <- ifelse(lang_spoken$langId == 1, 'AMHARIC', lang_spoken$langId)
+lang_spoken$langId <- ifelse(lang_spoken$langId == 2, 'OROMIFFA', lang_spoken$langId)
+lang_spoken$langId <- ifelse(lang_spoken$langId == 3, 'TIGRIGNA', lang_spoken$langId)
+lang_spoken$langId <- ifelse(lang_spoken$langId == 4, 'WOLAYITTA', lang_spoken$langId)
+lang_spoken$langId <- ifelse(lang_spoken$langId == 5, 'SIDAMIGNA', lang_spoken$langId)
+                             
+#Distribution of languages spoken
+ggplot(data=lang_spoken, aes(x=langId)) +
+  geom_bar(color='black',fill='#19723f')+
+  ylim(0,600)+
+    theme(
+         plot.background = element_rect(fill = "#fcfff9"),
+        panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"),
+        panel.grid.minor = element_line(size=.1,colour = "black"),
+        panel.grid.major.x = element_blank(),
+         panel.grid.minor.x = element_blank())+
+  labs(
+    title = 'Distribution of Languages by Caller',
+    x = 'Language',
+    y= 'Frequency'
+  )
+```
 
 ### TOP MENU
 
@@ -269,12 +312,13 @@ top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " PRESSED", "")
 top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " PRESSED", "")
 top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, " SELECTED", "")
 
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RAIN OPTION", "1 - RAIN OPTION")
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "HHI OPTION", "2 - HHI OPTION")
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "LIVESTOCK OPTION", "3 - LIVESTOCK OPTION")
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "COVID OPTION", "4 - COVID OPTION")
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RESET PROFILE OPTION", "\\* - RESET PROFILE")
-top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "TOP MENU REPLAYED", "\\# - TOP MENU REPLAYED")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RAIN OPTION", "RAIN")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "HHI OPTION", "HHI")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "LIVESTOCK OPTION", "LIVESTOCK")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "COVID OPTION", "COVID")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "RESET PROFILE OPTION", "NON-NUMERIC KEY")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "TOP MENU REPLAYED", "NON-NUMERIC KEY")
+top_menu_call$logInfo<- str_replace(top_menu_call$logInfo, "TOP MENU INVALID KEY", "NON-NUMERIC KEY")
 
 top_menu_call <- top_menu_call %>%
   group_by(callId, logInfo) %>%
@@ -283,17 +327,28 @@ top_menu_call <- top_menu_call %>%
 top_menu_call<- top_menu_call[match(unique(top_menu_call$callId), top_menu_call$callId),]
 
 ggplot(top_menu_call, aes(x=fct_infreq(logInfo))) +
-  theme(axis.text.x = element_text(angle = 25, hjust =1))+
-  geom_bar(color='black', fill='red')+
+  theme(axis.text.x = element_text(angle = 30, hjust =1))+
+  geom_bar(color='black', fill='#19723f')+
   geom_text(stat='count', aes(label=..count..), vjust=-1)+
-  ylim(0,6500)+
+  geom_text(aes(x='RAIN', y=200, label='Press 1'),color='#fcfff9')+
+  geom_text(aes(x='HHI', y=200, label='Press 2'),color='#fcfff9')+
+  geom_text(aes(x='LIVESTOCK', y=200, label='Press 3'),color='#fcfff9')+
+  geom_text(aes(x='COVID', y=750, label='Press 4'),position = position_nudge(x=.3),color='black')+
+  geom_text(aes(x='NON-NUMERIC KEY', y=200, label='Press #/*'),color='#fcfff9')+
+  ylim(0,5000)+
+  theme(axis.text.x = element_text(angle = 30, hjust =1),
+         plot.background = element_rect(fill = "#fcfff9"),
+        panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"),
+        panel.grid.minor = element_line(size=.1,colour = "black"),
+        panel.grid.major.x = element_blank(),
+         panel.grid.minor.x = element_blank())+
   labs(
-    title = 'Distirution of Top Menu Options Selected per Call with Number Pressed Indicated',
+    title = 'Distribution of Options Selected',
     x = 'Top Menu Options',
-    y='Number of Calls'
+    y='Frequency'
   )
-unique(top_menu_call$callId)
-class(log_data)
+
 ```
  
  
@@ -341,14 +396,14 @@ rain_menu$logInfo<- str_replace(rain_menu$logInfo, " PRESSED", "")
 rain_menu$logInfo<- str_replace(rain_menu$logInfo, " OPTION", "")
 
 #plotting rain menu breakdown
-ggplot(data=rain_menu, aes(x=logInfo)) +
-  theme(axis.text.x = element_text(angle = 30, hjust =1))+
-  geom_bar(fill='blue')+
-  labs(
-    title = 'Breakdown for Individuals By Content Selected at least Once from the rain menu',
-    x = 'Content Selected',
-    y= 'count'
-  )
+# ggplot(data=rain_menu, aes(x=logInfo)) +
+#   theme(axis.text.x = element_text(angle = 30, hjust =1))+
+#   geom_bar(fill='blue')+
+#   labs(
+#     title = 'Breakdown for Individuals By Content Selected at least Once from the rain menu',
+#     x = 'Content Selected',
+#     y= 'count'
+#   )
 
 
 
@@ -372,25 +427,40 @@ rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, " OPTION", "")
 
 
 #FIxing the HHI menu and adding numbeers
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PRE PLANTING", "1 - PREPLZNTING")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PLANTING", "2 - PLANTING")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "1 - PREPLZNTING", "1 - PREPLANTING")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "CROP PROTECTION", "3 - CROP PROTECTION")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "FERTILIZER SIDE DRESSING", "4 - FERTILIZER DRESSING")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "POST HARVEST AND PROCESSING", "5 - POST HARVEST/PROCESSING")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "GO TO MAIN MENU", "* - GO TO MAIN MENU")
-rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "MAIN MENU REPLAYED", "# - MAIN MENU REPLAYED")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PRE PLANTING", "PREPLANTING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "PLANTING", "PLANTING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "CROP PROTECTION", "CROP PROTECTION")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "FERTILIZER SIDE DRESSING", "FERTILIZER DRESSING")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "POST HARVEST AND PROCESSING", "POST HARVEST")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "GO TO MAIN MENU", "NON-NUMERIC KEY")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "MAIN MENU REPLAYED", "NON-NUMERIC KEY")
+rain_menu_call$logInfo<- str_replace(rain_menu_call$logInfo, "INVALID KEY", "NON-NUMERIC KEY")
 
+#c7d0d8 - grey
+#fcfff9 - cream
+#19723f -
 #plotting rain menu breakdown
 ggplot(data=rain_menu_call, aes(x=fct_infreq(logInfo))) +
-  theme(axis.text.x = element_text(angle = 25, hjust =1))+
-  geom_bar(color='black', fill='blue',position = position_dodge( 0.3))+
+  geom_bar(color='black', fill='#c7d0d8',position = position_dodge( 0.3))+
   geom_text(stat='count', aes(label=..count..), vjust=-1)+
-  ylim(0,3250)+
+  geom_text(aes(x='PREPLANTING', y=120, label='Press 1'),color='black')+
+  geom_text(aes(x='PLANTING', y=120, label='Press 2'),color='black')+
+  geom_text(aes(x='CROP PROTECTION', y=120, label='Press 3'),color='black')+
+  geom_text(aes(x='FERTILIZER DRESSING', y=120, label='Press 4'),color='black')+
+  geom_text(aes(x='POST HARVEST', y=120, label='Press 5'),color='black')+
+  geom_text(aes(x='NON-NUMERIC KEY', y=120, label='Press #/*'),color='black')+
+  ylim(0,2800)+
+  theme(axis.text.x = element_text(angle = 30, hjust =1,color='black'),
+        plot.background = element_rect(fill = "#fcfff9"),
+         panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"),
+        panel.grid.minor = element_line(size=.1,colour = "black"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())+
   labs(
-    title = 'Distirution of Rain Menu Options Selected per Call',
+    title = 'Distribution of Options Selected',
     x = 'Rain Menu Options',
-    y='Number of Calls'
+    y='Frequency'
   )
 
 #GETTING HHI MENU PER CALL
@@ -410,29 +480,47 @@ HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, " OPTION", "")
 
 
 #FIxing the HHI menu and adding numbeers
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PRE PLANTING", "1 - PREPLANTING")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PLANTING AND TRANSPLANTING", "2 - PLANTING/TRANSPLANTING")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARROWING AND EARTHNING", "3 - HARROWING/EARTHNING")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "IRRIGATING CROPS", "4 - IRRIGATING CROPS")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PROTECTING CROPS", "5 - PROTECTING CROPS")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "APPLYING FERTILIZER", "6 - APPLYING FERTILIZER")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARVESTING AND PROCESSING", "7 - HARVESTING/PROCESSING")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "GO TO MAIN MENU", "* - GO TO MAIN MENU")
-HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HHI MAIN MENU REPLAYED", "# - HHI MAIN MENU REPLAYED")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PRE PLANTING", "PREPLANTING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PLANTING AND TRANSPLANTING", "PLANTING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARROWING AND EARTHNING", "HARROWING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "IRRIGATING CROPS", "IRRIGATE CROPS")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "PROTECTING CROPS", "PROTECT CROPS")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "APPLYING FERTILIZER", "APPLY FERTILIZER")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HARVESTING AND PROCESSING", "HARVESTING")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "GO TO MAIN MENU", "NON-NUMERIC KEY")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "HHI MAIN MENU REPLAYED", "NON-NUMERIC KEY")
+HHI_menu_call$logInfo<- str_replace(HHI_menu_call$logInfo, "INVALID KEY", "NON-NUMERIC KEY")
 
+# theme(plot.background = element_rect(fill = "#fcfff9"),
+#         legend.background = element_rect(fill = "#fcfff9"),
+#         panel.background = element_rect(fill = "#fcfff9"),
+#         panel.grid.major = element_line(size=.1,colour = "black"))
 
 #plotting rain menu breakdown
 ggplot(data=HHI_menu_call, aes(x=fct_infreq(logInfo))) +
-  theme(axis.text.x = element_text(angle = 30, hjust =1))+
-  geom_bar(color='black', fill='green',position = position_dodge( 0.3))+
+  geom_bar(color='black', fill='#19723f',position = position_dodge( 0.3))+
   geom_text(stat='count', aes(label=..count..), vjust=-1)+
-  ylim(0,1300)+
+  geom_text(aes(x='PREPLANTING', y=50, label='Press 1'),color='#fcfff9')+
+  geom_text(aes(x='PLANTING', y=50, label='Press 2'),color='#fcfff9')+
+  geom_text(aes(x='HARROWING', y=50, label='Press 3'),color='#fcfff9')+
+  geom_text(aes(x='IRRIGATE CROPS', y=50, label='Press 4'),color='#fcfff9')+
+  geom_text(aes(x='PROTECT CROPS', y=50, label='Press 5'),color='#fcfff9')+
+  geom_text(aes(x='APPLY FERTILIZER', y=50, label='Press 6'),color='#fcfff9')+
+  geom_text(aes(x='HARVESTING', y=50, label='Press 7'),color='#fcfff9')+
+  geom_text(aes(x='NON-NUMERIC KEY', y=50, label='Press #/*'),color='#fcfff9')+
+  ylim(0,1250)+
+  theme(axis.text.x = element_text(angle = 30, hjust =1),
+        plot.background = element_rect(fill = "#fcfff9"),
+         panel.background = element_rect(fill = "#fcfff9"),
+        panel.grid.major = element_line(size=.1,colour = "black"),
+        panel.grid.minor = element_line(size=.1,colour = "black"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())+
   labs(
-    title = 'Distirution of HHI Menu Options Selected per Call',
+    title = 'Distribution of Options Selected',
     x = 'HHI Menu Options',
-    y='Number of Calls'
+    y='Frequency'
   )
-
 ```
 
 
@@ -860,22 +948,28 @@ rain_crop_menu <- filter(rain_crop_menu, !grepl("HHI",logInfo))
 rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU - ", "")
 rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, " SELECTED", "")
 rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, " PTION", "OPTION")
-table(rain_crop_menu$logInfo)
 
 
 #ADDING THE NUMBERS
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "BARLEY OPTION", "1 - BARLEY OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MAIZE OPTION", "2 - MAIZE OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SORGHUM OPTION", "3 - SORGHUM OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "TEF OPTION", "4 - TEF OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "WHEAT OPTION", "5 - WHEAT OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SESAME OPTION", "6 - SESAME OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "FAVA BEAN OPTION", "7 - FAVA BEAN OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CHICKPEA OPTION", "8 - CHICKPEA OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COMMON BEANOPTION", "9 - COMMON BEAN OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COTTON OPTION", "10 - COTTON OPTION")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU REPLAYED", "# - CROP MENU REPLAYED")
-rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "* - GO TO MAIN MENU OPTION")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "BARLEY OPTION", "BARLEY")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MAIZE OPTION", "MAIZE")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SORGHUM OPTION", "SORGHUM")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "TEF OPTION", "TEF")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "DUREM WHEAT OPTION", "UNNUMBERED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MALT BARLEY", "UNNUMBERED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "LENTIL", "UNNUMBERED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "RICE", "UNNUMBERED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "UNNUMBERED OPTION", "UNNUMBERED")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "WHEAT OPTION", "WHEAT")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "SESAME OPTION", "SESAME")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "FAVA BEAN OPTION", "FAVA BEAN")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CHICKPEA OPTION", "CHICKPEA")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COMMON BEANOPTION", "COMMON BEAN")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "COTTON OPTION", "COTTON")
+rain_crop_menu$logInfo<- na_if(rain_crop_menu$logInfo, "COTTON")
+
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "CROP MENU REPLAYED", "NON-NUMERIC KEY")
+rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "NON-NUMERIC KEY")
 
 #fixes
 rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "MALT 1 - ", "MALT ")
@@ -884,16 +978,57 @@ rain_crop_menu$logInfo<- str_replace(rain_crop_menu$logInfo, "DUREM 5 - ", "DURE
 
 
 #plotting rain
-ggplot(rain_crop_menu, aes(x=fct_infreq(logInfo))) +
-  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
-  geom_bar(fill='black')+
+ggplot(rain_crop_menu %>% drop_na()  %>% filter(logInfo!='UNNUMBERED'), aes(x=fct_infreq(logInfo))) +
+  geom_bar(color='black', fill='#c7d0d8',position = position_dodge( 0.3))+
   geom_text(stat='count', aes(label=..count..), vjust=-1)+
-  ylim(0,3200)+
+  geom_text(aes(x='BARLEY', y=200, label='Press 1'),color='black')+
+  geom_text(aes(x='MAIZE', y=200, label='Press 2'),color='black')+
+  geom_text(aes(x='SORGHUM', y=200, label='Press 3'),color='black')+
+  geom_text(aes(x='TEF', y=200, label='Press 4'),color='black')+
+  geom_text(aes(x='WHEAT', y=200, label='Press 5'),color='black')+
+  geom_text(aes(x='SESAME', y=200, label='Press 6'),color='black')+
+  geom_text(aes(x='FAVA BEAN', y=200, label='Press 7'),color='black')+
+  geom_text(aes(x='CHICKPEA', y=200, label='Press 8'),color='black')+
+  geom_text(aes(x='COMMON BEAN', y=200, label='Press 9'),color='black')+
+  #geom_text(aes(x='COTTON', y=200, label='Press\n10'),color='black')+
+  geom_text(aes(x='NON-NUMERIC KEY', y=200, label='Press #/*'),color='black')+
+  theme(axis.text.x = element_text(angle = 30, hjust =1,color='black'),
+         plot.background = element_rect(fill = "#fcfff9"),
+         panel.background = element_rect(fill = "#fcfff9"),
+         panel.grid.major = element_line(size=.1,colour = "black"),
+         panel.grid.minor = element_line(size=.1,colour = "black"),
+         panel.grid.major.x = element_blank(),
+         panel.grid.minor.x = element_blank())+
+  ylim(0,2500)+
   labs(
-    title = 'Rain Crop menu Total Selections with Button Choices',
-    x = 'Crops',
-    y= 'count'
+    title = 'Distribution of Options Selected',
+    x = 'Rain Crop Menu Options',
+    y= 'Frequency'
   )
+
+# ggplot(data=rain_menu_call, aes(x=fct_infreq(logInfo))) +
+#   geom_bar(color='black', fill='#c7d0d8',position = position_dodge( 0.3))+
+#   geom_text(stat='count', aes(label=..count..), vjust=-1)+
+#   geom_text(aes(x='PREPLANTING', y=120, label='Press 1'),color='black')+
+#   geom_text(aes(x='PLANTING', y=120, label='Press 2'),color='black')+
+#   geom_text(aes(x='CROP PROTECTION', y=120, label='Press 3'),color='black')+
+#   geom_text(aes(x='FERTILIZER DRESSING', y=120, label='Press 4'),color='black')+
+#   geom_text(aes(x='POST HARVEST', y=120, label='Press 5'),color='black')+
+#   geom_text(aes(x='NON-NUMERIC KEY', y=120, label='Press #/*'),color='black')+
+#   ylim(0,2800)+
+#   theme(axis.text.x = element_text(angle = 30, hjust =1,color='black'),
+#         plot.background = element_rect(fill = "#fcfff9"),
+#          panel.background = element_rect(fill = "#fcfff9"),
+#         panel.grid.major = element_line(size=.1,colour = "black"),
+#         panel.grid.minor = element_line(size=.1,colour = "black"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor.x = element_blank())+
+#   labs(
+#     title = 'Distirution of Rain Menu Options Selected per Call with Corresponding Button',
+#     x = 'Rain Menu Options',
+#     y='Number of Times Selected'
+#   )
+
 
 
 #getting the HHI MENU
@@ -903,27 +1038,44 @@ hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, " SELECTED", "")
 table(hhi_crop_menu$logInfo)
 
 #ADDING THE NUMBERS
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "POTATO OPTION", "1 - POTATO OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CARROT OPTION", "2 - CARROT OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "ONION OPTION", "3 - ONION OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GARLIC OPTION", "4 - GARLIC OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "TOMATO OPTION", "5 - TOMATO OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "PAPER OPTION", "6 - PEPPER OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "HEAD CABBAGE OPTION", "7 - HEAD CABBAGE OPTION")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CROP MENU REPLAYED", "# - CROP MENU REPLAYED")
-hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "* - GO TO MAIN MENU OPTION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "POTATO OPTION", "POTATO")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CARROT OPTION", "CARROT")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "ONION OPTION", "ONION")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GARLIC OPTION", "GARLIC")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "TOMATO OPTION", "TOMATO")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "PAPER OPTION", "PEPPER")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "HEAD CABBAGE OPTION", "HEAD CABBAGE")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "CROP MENU REPLAYED", "NON-NUMERIC KEY")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "GO TO MAIN MENU OPTION", "NON-NUMERIC KEY")
+hhi_crop_menu$logInfo<- str_replace(hhi_crop_menu$logInfo, "INVALID KEY PRESSED", "NON-NUMERIC KEY")
 
 #plotting HHI
 ggplot(hhi_crop_menu, aes(x=fct_infreq(logInfo))) +
-  theme(axis.text.x = element_text(angle = 60, hjust =1, size = 7))+
-  geom_bar(fill='brown')+
+  geom_bar(color='black', fill='#19723f',position = position_dodge( 0.3))+
   geom_text(stat='count', aes(label=..count..), vjust=-1)+
+  geom_text(aes(x='POTATO', y=70, label='Press 1'),color='#fcfff9')+
+  geom_text(aes(x='CARROT', y=70, label='Press 2'),color='#fcfff9')+
+  geom_text(aes(x='ONION', y=70, label='Press 3'),color='#fcfff9')+
+  geom_text(aes(x='GARLIC', y=70, label='Press 4'),color='#fcfff9')+
+  geom_text(aes(x='TOMATO', y=70, label='Press 5'),color='#fcfff9')+
+  geom_text(aes(x='PEPPER', y=70, label='Press 6'),color='#fcfff9')+
+  geom_text(aes(x='HEAD CABBAGE', y=70, label='Press 7'),color='#fcfff9')+
+  geom_text(aes(x='NON-NUMERIC KEY', y=70, label='Press #/*'),color='#fcfff9')+
   ylim(0,1750)+
+  theme(axis.text.x = element_text(angle = 30, hjust =1),
+         plot.background = element_rect(fill = "#fcfff9"),
+          panel.background = element_rect(fill = "#fcfff9"),
+         panel.grid.major = element_line(size=.1,colour = "black"),
+         panel.grid.minor = element_line(size=.1,colour = "black"),
+         panel.grid.major.x = element_blank(),
+         panel.grid.minor.x = element_blank())+
   labs(
-    title = 'HHI Crop Menu Total Selections with Button Choices',
-    x = 'Crops',
-    y= 'count'
+    title = 'Distribution of Options Selected',
+    x = 'HHI Crop Menu Options',
+    y= 'Frequency'
   )
+
+
 
 ```
 
